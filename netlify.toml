@@ -1,0 +1,10 @@
+[build]
+  base = "frontend"
+  command = "npm install --include=dev && npm run build"
+  publish = "dist"
+
+# Aplicación de una sola página (React Router): todas las rutas sirven index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
