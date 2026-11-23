@@ -1,5 +1,6 @@
 export async function api(path, options = {}) {
-  const respuesta = await fetch(path, {
+  const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+  const respuesta = await fetch(`${apiUrl}${path}`, {
     ...options,
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
