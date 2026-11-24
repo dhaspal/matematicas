@@ -62,33 +62,33 @@ export default function CasosForenses() {
   const campos = (prueba) => {
     const actual = datos[prueba];
     if (prueba === "hora") return [
-      ["Ta", "Temperatura ambiente (°C)", actual.Ta],
-      ["temperatura", "Temperatura medida (°C)", actual.temperatura],
-      ["k", "Constante k", actual.k],
-      ["hora_hallazgo", "Hora del hallazgo", actual.hora_hallazgo],
+      ["Ta", "Temperatura ambiente", "T_a", actual.Ta],
+      ["temperatura", "Temperatura medida del cuerpo", "T(t)", actual.temperatura],
+      ["k", "Constante de enfriamiento", "k", actual.k],
+      ["hora_hallazgo", "Hora del hallazgo", "t_h", actual.hora_hallazgo],
     ];
     if (prueba === "sangre") return [
-      ["A", "Concentración inicial A", actual.A],
-      ["k", "Constante k", actual.k],
-      ["t1", "Tiempo inicial t1", actual.t1],
-      ["t2", "Tiempo final t2", actual.t2],
-      ["umbral", "Umbral de referencia", actual.umbral],
+      ["A", "Concentración inicial", "A", actual.A],
+      ["k", "Constante de eliminación", "k", actual.k],
+      ["t1", "Tiempo inicial", "t_1", actual.t1],
+      ["t2", "Tiempo final", "t_2", actual.t2],
+      ["umbral", "Umbral de referencia", "U", actual.umbral],
     ];
     if (prueba === "vector") return [
-      ["A", "Punto A [x,y]", typeof actual.A === "string" ? actual.A : listaATexto(actual.A)],
-      ["B", "Punto B [x,y]", typeof actual.B === "string" ? actual.B : listaATexto(actual.B)],
-      ["posiciones", "Posiciones [[x,y],...]", typeof actual.posiciones === "string" ? actual.posiciones : listaATexto(actual.posiciones)],
+      ["A", "Primer punto de impacto", "A=(x_A,y_A)", typeof actual.A === "string" ? actual.A : listaATexto(actual.A)],
+      ["B", "Segundo punto de impacto", "B=(x_B,y_B)", typeof actual.B === "string" ? actual.B : listaATexto(actual.B)],
+      ["posiciones", "Posibles posiciones del tirador", "P_i", typeof actual.posiciones === "string" ? actual.posiciones : listaATexto(actual.posiciones)],
     ];
     if (prueba === "hill") return [
-      ["matriz", "Matriz clave", typeof actual.matriz === "string" ? actual.matriz : listaATexto(actual.matriz)],
-      ["cifrado", "Texto cifrado", actual.cifrado],
+      ["matriz", "Matriz clave", "K", typeof actual.matriz === "string" ? actual.matriz : listaATexto(actual.matriz)],
+      ["cifrado", "Texto cifrado", "C", actual.cifrado],
     ];
     return [
-      ["a", "Centro x (a)", actual.a],
-      ["b", "Centro y (b)", actual.b],
-      ["p", "Coeficiente p", actual.p],
-      ["q", "Coeficiente q", actual.q],
-      ["c", "Constante c", actual.c],
+      ["a", "Centro de la distancia en X", "a", actual.a],
+      ["b", "Centro de la distancia en Y", "b", actual.b],
+      ["p", "Coeficiente de la ruta en X", "p", actual.p],
+      ["q", "Coeficiente de la ruta en Y", "q", actual.q],
+      ["c", "Constante de la restricción", "c", actual.c],
     ];
   };
 
@@ -114,9 +114,10 @@ export default function CasosForenses() {
           <span className="casos-kicker">DATOS DE ENTRADA</span>
           <h2>{actualAplicacion.nombre}</h2>
           <Ecuacion latex={actualAplicacion.formulas} />
-          {campos(activa).map(([clave, etiqueta, valor]) => (
-            <label key={clave}>
-              {etiqueta}
+          {campos(activa).map(([clave, etiqueta, variable, valor]) => (
+            <label className="campo-forense" key={clave}>
+              <strong>{etiqueta}</strong>
+              <span className="variable-forense"><Ecuacion latex={variable} /></span>
               <input
                 value={valor}
                 onChange={(event) => {
