@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Swords, GraduationCap, FlaskConical, Crown } from "lucide-react";
+import { Swords, GraduationCap, FlaskConical, Crown, Search } from "lucide-react";
 
 const modos = [
   { to: "/duelo", titulo: "Duelo de Cartas", texto: "Resuelve ejercicios reales y derrota a la máquina.", icono: Swords, color: "violeta" },
   { to: "/paso", titulo: "Paso a Paso", texto: "Aprende derivadas e integrales con opciones guiadas.", icono: GraduationCap, color: "cian" },
   { to: "/laboratorio", titulo: "Laboratorio", texto: "Calculadora simbólica con pasos y gráficas.", icono: FlaskConical, color: "verde" },
   { to: "/jefe", titulo: "Jefe Final", texto: "Supera etapas combinadas de optimización.", icono: Crown, color: "dorado" },
+  { to: "/casos", titulo: "Casos Forenses", texto: "Resuelve un crimen usando matemáticas reales.", icono: Search, color: "dorado" },
 ];
 
 export default function Inicio() {

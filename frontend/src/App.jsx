@@ -4,11 +4,13 @@ import DueloCartas from "./pages/DueloCartas";
 import PasoAPaso from "./pages/PasoAPaso";
 import Laboratorio from "./pages/Laboratorio";
 import JefeFinal from "./pages/JefeFinal";
+import CasosForenses from "./pages/CasosForenses";
 import BarraProgreso from "./components/BarraProgreso";
 import { useProgreso } from "./hooks/useProgreso";
 
 export default function App() {
-  const { progreso, sumarAcierto, sumarError, reiniciar } = useProgreso();
+  const progresoState = useProgreso();
+  const { progreso, sumarAcierto, sumarError, reiniciar } = progresoState;
   return (
     <>
       <BarraProgreso progreso={progreso} reiniciar={reiniciar} />
@@ -19,6 +21,7 @@ export default function App() {
         <Route path="/paso" element={<PasoAPaso sumarAcierto={sumarAcierto} sumarError={sumarError} />} />
         <Route path="/laboratorio" element={<Laboratorio />} />
         <Route path="/jefe" element={<JefeFinal sumarAcierto={sumarAcierto} sumarError={sumarError} />} />
+        <Route path="/casos" element={<CasosForenses {...progresoState} />} />
       </Routes>
     </>
   );

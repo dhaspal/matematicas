@@ -5,7 +5,7 @@ const inicial = {
   racha: 0,
   vidas: 3,
   logros: [],
-  estadisticas: { derivadas: 0, integrales: 0, vectores: 0, matrices: 0, optimizacion: 0 },
+  estadisticas: { derivadas: 0, integrales: 0, vectores: 0, matrices: 0, optimizacion: 0, casos: { facil: 0, medio: 0, dificil: 0 } },
 };
 
 export function useProgreso() {
@@ -32,5 +32,16 @@ export function useProgreso() {
 
   const sumarError = () => setProgreso((actual) => ({ ...actual, racha: 0, vidas: Math.max(0, actual.vidas - 1) }));
   const reiniciar = () => setProgreso(inicial);
-  return { progreso, sumarAcierto, sumarError, reiniciar };
+  const gastarXP = (cantidad = 10) => setProgreso((actual) => ({ ...actual, xp: Math.max(0, actual.xp - cantidad) }));
+  const cerrarCaso = (dificultad, sinErrores = false, sinPistas = false) =>
+    setProgreso((actual) => {
+      const casos = { ...(actual.estadisticas.casos || { facil: 0, medio: 0, dificil: 0 }) };
+      casos[dificultad] = (casos[dificultad] || 0) + 1;
+      const logros = [...actual.logros];
+      if (!logros.includes("Detective novato")) logros.push("Detective novato");
+      if (!logros.includes("Caso cerrado")) logros.push("Caso cerrado");
+      if (sinPistas && !logros.includes("Sin pistas")) logros.push("Sin pistas");
+      return { ...actual, xp: actual.xp + 100, logros, estadisticas: { ...actual.estadisticas, casos } };
+    });
+  return { progreso, sumarAcierto, sumarError, reiniciar, gastarXP, cerrarCaso };
 }

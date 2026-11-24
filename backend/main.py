@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ejercicios, laboratorio, jefe
+from routers import ejercicios, laboratorio, jefe, casos
 
 app = FastAPI(title="MathQuest API", version="1.0.0")
 
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(ejercicios.router)
 app.include_router(laboratorio.router)
 app.include_router(jefe.router)
+app.include_router(casos.router)
 
 
 @app.get("/api/salud")

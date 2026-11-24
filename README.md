@@ -54,3 +54,20 @@ Demostración sugerida de 3 minutos:
 2. Después abre **Paso a Paso**, genera un ejercicio de derivadas y muestra la respuesta aceptada simbólicamente.
 3. Continúa con **Duelo de Cartas** y resuelve una carta en vivo.
 4. Cierra con **Jefe Final** para mostrar las etapas encadenadas.
+
+## Casos Forenses: la matemática real detrás de cada prueba
+
+**Casos Forenses** convierte derivadas, integrales, vectores, matrices y optimización en evidencia investigativa:
+
+- **Ley de enfriamiento:** estima la hora de fallecimiento en medicina forense.
+- **Farmacocinética:** integra una concentración exponencial para medir una dosis acumulada.
+- **Balística:** calcula la distancia de posiciones a una trayectoria y reconstruye el origen del disparo.
+- **Cifrado de Hill:** usa matrices, determinantes e inversos modulares para descifrar mensajes.
+- **Lagrange:** optimiza rutas o puntos con restricciones lineales.
+
+Demo sugerida con seed fija `4512`:
+
+1. Selecciona dificultad **Difícil**.
+2. Introduce la seed `4512` y abre el caso.
+3. Resuelve las cinco pruebas y observa cómo se descartan los sospechosos.
+4. Presenta la acusación final.
