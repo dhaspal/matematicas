@@ -89,3 +89,4 @@ input, select { width:100%; color:white; background:#0d1020; border:1px solid #3
 .casos-formulario .campo-forense .variable-forense{grid-column:2;grid-row:1;color:#f5d49a;font-size:.95rem}
 .casos-formulario .campo-forense .variable-forense .katex{font-size:1em}
 .casos-formulario .campo-forense input{grid-column:1/-1;margin-top:8px}
+.resultado-final.forense p{color:#cbd5e1;font-size:.92rem;margin-top:8px}.resultado-final.forense p strong{font-size:inherit;color:#f5d49a}.resultado-utilidad{border-top:1px dashed #475569;padding-top:10px;margin-top:12px}

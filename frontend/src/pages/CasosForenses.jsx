@@ -14,7 +14,7 @@ const aplicaciones = [
 ];
 
 const iniciales = {
-  hora: { Ta: 20, temperatura: 34.61, k: 0.055, hora_hallazgo: 20 },
+  hora: { Ta: 20, temperatura: 34.61, k: 0.055, hora_hallazgo: "20:00" },
   sangre: { A: 8, k: 0.28, t1: 2, t2: 4, umbral: 25 },
   vector: { A: [4, 3], B: [9, 8], posiciones: [[7, 7], [4, 3], [9, 8]] },
   hill: { matriz: [[3, 3], [2, 5]], cifrado: "XDKALDLH" },
@@ -93,6 +93,13 @@ export default function CasosForenses() {
   };
 
   const actualAplicacion = aplicaciones.find((item) => item.id === activa);
+  const utilidad = {
+    hora: "Estima desde cuándo llevaba enfriándose el cuerpo. El resultado sirve como intervalo aproximado de fallecimiento.",
+    sangre: "Calcula la exposición acumulada durante una ventana de tiempo y la compara con un umbral de referencia.",
+    vector: "Indica cuál de las posiciones candidatas tiene menor distancia a la trayectoria reconstruida.",
+    hill: "Descifra el mensaje mediante el inverso modular de la matriz, útil para estudiar criptografía.",
+    lagrange: "Encuentra el punto óptimo sobre una ruta o restricción lineal.",
+  }[activa];
   return (
     <main className="pagina casos-forenses">
       <header className="casos-cabecera">
@@ -122,7 +129,7 @@ export default function CasosForenses() {
                 value={valor}
                 onChange={(event) => {
                   const lista = activa === "vector" || activa === "hill";
-                  if (lista) cambiarDato(clave, event.target.value);
+                  if (lista || (activa === "hora" && clave === "hora_hallazgo")) cambiarDato(clave, event.target.value);
                   else cambiarDato(clave, event.target.value === "" ? "" : Number(event.target.value));
                 }}
               />
@@ -143,7 +150,15 @@ export default function CasosForenses() {
               <div className="resultado-final forense">
                 <h2>Resultado</h2>
                 <strong>{resultado.resultado}</strong>
+                {resultado.horas_transcurridas !== undefined && (
+                  <p>
+                    Han transcurrido aproximadamente <strong>{resultado.horas_transcurridas} horas</strong>.
+                    La temperatura cambia alrededor de <strong>{resultado.derivada} °C/h</strong> en ese momento.
+                  </p>
+                )}
                 {resultado.letal !== undefined && <p>{resultado.letal ? "Supera el umbral de referencia." : "Está por debajo del umbral de referencia."}</p>}
+                {resultado.distancias && <p>Posición compatible: P{resultado.resultado}. Menor distancia a la trayectoria.</p>}
+                <p className="resultado-utilidad">{utilidad}</p>
               </div>
               {resultado.grafica && <Grafica datos={resultado.grafica} />}
               <h2>Cómo se calcula</h2>

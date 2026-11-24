@@ -7,7 +7,15 @@ export default function Grafica({ datos }) {
       const tMax = 8;
       const x = Array.from({ length: 81 }, (_, i) => i * tMax / 80);
       const y = x.map((t) => datos.Ta + (37 - datos.Ta) * Math.exp(-datos.k * t));
-      return <div className="grafica-contenedor"><Plot data={[{ x, y, type: "scatter", mode: "lines", line: { color: "#f59e0b" } }]} layout={{ autosize: true, height: 360, paper_bgcolor: "#111827", plot_bgcolor: "#111827", font: { color: "#e5e7eb" }, margin: { l: 55, r: 20, t: 30, b: 45 } }} config={{ responsive: true, displayModeBar: true, displaylogo: false }} /></div>;
+      const tm = datos.t || 0;
+      const temperatureAtM = datos.Ta + (37 - datos.Ta) * Math.exp(-datos.k * tm);
+      return <div className="grafica-contenedor"><Plot
+        data={[
+          { x, y, type: "scatter", mode: "lines", line: { color: "#f59e0b" }, name: "Temperatura" },
+          { x: [tm], y: [temperatureAtM], type: "scatter", mode: "markers", marker: { color: "#22c55e", size: 12 }, name: "Temperatura estimada" },
+        ]}
+        layout={{ autosize: true, height: 360, paper_bgcolor: "#111827", plot_bgcolor: "#111827", font: { color: "#e5e7eb" }, margin: { l: 55, r: 20, t: 50, b: 45 }, xaxis: { title: "Tiempo (horas)" }, yaxis: { title: "Temperatura (°C)" } }}
+        config={{ responsive: true, displayModeBar: true, displaylogo: false }} /></div>;
     }
     const expr = (datos.funcion || "0").replace("**", "^");
     const x = Array.from({ length: 121 }, (_, i) => -6 + i * 0.1);

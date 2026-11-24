@@ -21,29 +21,46 @@ def calcular_prueba(peticion: CalcularPruebaRequest):
             ta = sp.Float(str(datos["Ta"]), 6)
             temperatura = sp.Float(str(datos["temperatura"]), 6)
             k = sp.Float(str(datos["k"]), 6)
-            hora_hallazgo = sp.Float(str(datos["hora_hallazgo"]), 6)
-            if not (1 <= ta <= 40 and 0 < k <= 1):
-                raise ValueError("Los valores de Ta y k están fuera de rango.")
-            if not (ta < temperatura < 40):
-                raise ValueError("La temperatura medida debe estar entre la ambiente y 40 °C.")
+            hora_texto = str(datos["hora_hallazgo"]).strip()
+            match = re.fullmatch(r"(\d{1,2})(?:[:.](\d{2}))?", hora_texto)
+            if not match:
+                raise ValueError("Escribe la hora del hallazgo como HH:MM, por ejemplo 20:30.")
+            hallazgo_hora = int(match.group(1))
+            hallazgo_minutos = int(match.group(2) or 0)
+            if hallazgo_hora > 23 or hallazgo_minutos > 59:
+                raise ValueError("La hora debe estar entre 00:00 y 23:59.")
+            hora_hallazgo = sp.Float(hallazgo_hora + hallazgo_minutos / 60)
+            if not (0 <= ta <= 40):
+                raise ValueError("La temperatura ambiente debe estar entre 0 y 40 °C.")
+            if not (ta < temperatura <= 37):
+                raise ValueError("La temperatura medida debe estar por encima de la ambiental y no superar 37 °C.")
+            if not (0 < k <= 1):
+                raise ValueError("La constante k debe estar entre 0 y 1 h⁻¹.")
             t = -sp.log((temperatura - ta) / (sp.Float(37) - ta)) / k
-            hora = float(hora_hallazgo - t)
-            hh = max(0, int(hora))
-            mm = round((hora - hh) * 60)
-            if mm == 60:
-                hh += 1
+            horas_transcurridas = float(t)
+            if horas_transcurridas <= 0 or horas_transcurridas > 48:
+                raise ValueError("Con estos datos el tiempo estimado no es razonable. Revisa temperatura y k.")
+            hora_decimal = float(hora_hallazgo) - horas_transcurridas
+            if hora_decimal < 0:
+                hora_decimal = 24 + hora_decimal
+            hh = int(hora_decimal)
+            mm = int(round((hora_decimal - hh) * 60))
+            if mm >= 60:
+                hh = (hh + 1) % 24
                 mm = 0
-            derivative = -k * (temperatura - ta)
+            derivative = -k * (temperatura - ta) * sp.exp(-k * 0)
             return {
                 "resultado": f"{hh}:{mm:02d}",
-                "valor": float(t),
+                "valor": horas_transcurridas,
+                "horas_transcurridas": round(horas_transcurridas, 2),
+                "derivada": round(float(derivative), 3),
                 "pasos": [
                     {"titulo": "Modelo de Newton", "explicacion": "Se sustituyen Ta, T(t) y k en el modelo de enfriamiento.", "latex": rf"T(t)={sp.latex(ta)}+(37-{sp.latex(ta)})e^{{-{sp.latex(k)}t}}"},
                     {"titulo": "Despeje con logaritmo", "explicacion": "Se despeja el tiempo transcurrido desde el fallecimiento.", "latex": rf"t=-\frac{{\ln((T(t)-T_a)/(37-T_a))}}{{k}}"},
                     {"titulo": "Tiempo calculado", "explicacion": "Se resta el tiempo transcurrido a la hora del hallazgo.", "latex": rf"t={float(t):.2f}\;\text{{h}},\quad hora={hh}:{mm:02d}"},
                     {"titulo": "Razón de enfriamiento", "explicacion": "La derivada indica cuántos grados cambia el cuerpo por hora en ese instante.", "latex": rf"dT/dt={float(derivative):.3f}\;^\circ C/h"},
                 ],
-                "grafica": {"tipo": "derivada", "Ta": float(ta), "temperatura": float(temperatura), "k": float(k)},
+                "grafica": {"tipo": "derivada", "Ta": float(ta), "temperatura": float(temperatura), "k": float(k), "t": horas_transcurridas},
             }
         if peticion.prueba_id == "sangre":
             a = sp.Float(str(datos["A"]), 6)
