@@ -96,9 +96,9 @@ export default function CasosForenses() {
   const utilidad = {
     hora: "Estima desde cuándo llevaba enfriándose el cuerpo. El resultado sirve como intervalo aproximado de fallecimiento.",
     sangre: "Calcula la exposición acumulada durante una ventana de tiempo y la compara con un umbral de referencia.",
-    vector: "Indica cuál de las posiciones candidatas tiene menor distancia a la trayectoria reconstruida.",
+    vector: "Indica cuál de las posiciones candidatas está sobre la trayectoria y aproxima su ubicación como norte, sur, noreste, suroeste, etc.",
     hill: "Descifra el mensaje mediante el inverso modular de la matriz, útil para estudiar criptografía.",
-    lagrange: "Encuentra el punto óptimo sobre una ruta o restricción lineal.",
+    lagrange: "Encuentra el punto óptimo sobre una ruta o restricción lineal y aproxima hacia qué cuadrante queda.",
   }[activa];
   return (
     <main className="pagina casos-forenses">
@@ -157,7 +157,15 @@ export default function CasosForenses() {
                   </p>
                 )}
                 {resultado.letal !== undefined && <p>{resultado.letal ? "Supera el umbral de referencia." : "Está por debajo del umbral de referencia."}</p>}
-                {resultado.distancias && <p>Posición compatible: P{resultado.resultado}. Menor distancia a la trayectoria.</p>}
+                {resultado.distancias && (
+                  <p>
+                    Posición compatible: P{resultado.resultado}. Menor distancia a la trayectoria.
+                    <strong> Dirección aproximada: {resultado.cuadrante}</strong>
+                  </p>
+                )}
+                {resultado.cuadrante && activa === "lagrange" && (
+                  <p>Ruta de escape aproximada: <strong>{resultado.cuadrante}</strong>. {resultado.direccion}</p>
+                )}
                 <p className="resultado-utilidad">{utilidad}</p>
               </div>
               {resultado.grafica && <Grafica datos={resultado.grafica} />}

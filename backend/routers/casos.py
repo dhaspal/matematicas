@@ -1,3 +1,4 @@
+import math
 import random
 import re
 import sympy as sp
@@ -7,6 +8,27 @@ from services.casos.generador import crear_caso
 
 
 router = APIRouter(prefix="/api/casos", tags=["casos"])
+
+
+def direccion_cardinal(dx, dy, escala=45):
+    dx = float(dx)
+    dy = float(dy)
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return "Centro"
+    angulo = math.degrees(math.atan2(dy, dx))
+    angulo = (angulo + 360) % 360
+    direcciones = [
+        (0, "Este"),
+        (45, "Noreste"),
+        (90, "Norte"),
+        (135, "Noroeste"),
+        (180, "Oeste"),
+        (225, "Suroeste"),
+        (270, "Sur"),
+        (315, "Sureste"),
+    ]
+    sector = min(direcciones, key=lambda item: abs((angulo - item[0] + 180) % 360 - 180))[1]
+    return sector
 
 
 def _random_seed():
@@ -105,9 +127,20 @@ def calcular_prueba(peticion: CalcularPruebaRequest):
                     distance = ((pm - am).cross(d).norm()) / d.norm()
                 rows.append({"position": i, "distancia": float(distance)})
             compatible = min(rows, key=lambda row: row["distancia"])
+            compatible_position = posiciones[compatible["position"] - 1]
+            if len(a) == 2:
+                origen_dx = float(compatible_position[0]) - float(a[0])
+                origen_dy = float(compatible_position[1]) - float(a[1])
+                cuadrante_origen = direccion_cardinal(origen_dx, origen_dy)
+            else:
+                origen_dx = float(compatible_position[0]) - float(a[0])
+                origen_dy = float(compatible_position[1]) - float(a[1])
+                cuadrante_origen = direccion_cardinal(origen_dx, origen_dy)
             return {
                 "resultado": compatible["position"],
                 "distancias": rows,
+                "cuadrante": cuadrante_origen,
+                "direccion": f"La posición compatible P{compatible['position']} está aproximadamente al {cuadrante_origen.lower()} respecto al punto de referencia.",
                 "pasos": [
                     {"titulo": "Dirección", "explicacion": "Se calcula el vector que une los dos impactos.", "latex": rf"d=B-A={sp.latex(d)}"},
                     {"titulo": "Distancia punto-recta", "explicacion": "Se usa el producto cruz y la norma del vector dirección.", "latex": r"d(P,r)=\frac{|(P-A)\times d|}{|d|}"},
@@ -155,10 +188,13 @@ def calcular_prueba(peticion: CalcularPruebaRequest):
             point = solution[0]
             px, py = float(point[x]), float(point[y])
             value = float(objective.subs({x: point[x], y: point[y]}))
+            cuadrante = direccion_cardinal(px - a, py - b)
             return {
                 "resultado": f"({px:.2f}, {py:.2f})",
                 "punto": [px, py],
                 "valor": value,
+                "cuadrante": cuadrante,
+                "direccion": f"La ruta óptima conduce aproximadamente hacia el {cuadrante.lower()} respecto a la escena.",
                 "pasos": [
                     {"titulo": "Función objetivo", "explicacion": "Se minimiza la distancia al cuadrado a la escena.", "latex": rf"(x-{a:g})^2+(y-{b:g})^2"},
                     {"titulo": "Restricción", "explicacion": "El punto debe permanecer sobre la ruta.", "latex": rf"{p:g}x+{q:g}y={c:g}"},
