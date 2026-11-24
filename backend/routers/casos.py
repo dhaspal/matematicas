@@ -2,7 +2,7 @@ import random
 import re
 import sympy as sp
 from fastapi import APIRouter, HTTPException, Query
-from models.casos_schemas import AcusarRequest, VerificarPruebaRequest
+from models.casos_schemas import AcusarRequest, CalcularPruebaRequest, VerificarPruebaRequest
 from services.casos.generador import crear_caso
 
 
@@ -11,6 +11,148 @@ router = APIRouter(prefix="/api/casos", tags=["casos"])
 
 def _random_seed():
     return str(random.randint(100000, 999999))
+
+
+@router.post("/calcular-prueba")
+def calcular_prueba(peticion: CalcularPruebaRequest):
+    datos = peticion.datos
+    try:
+        if peticion.prueba_id == "hora":
+            ta = sp.Float(str(datos["Ta"]), 6)
+            temperatura = sp.Float(str(datos["temperatura"]), 6)
+            k = sp.Float(str(datos["k"]), 6)
+            hora_hallazgo = sp.Float(str(datos["hora_hallazgo"]), 6)
+            if not (1 <= ta <= 40 and 0 < k <= 1):
+                raise ValueError("Los valores de Ta y k están fuera de rango.")
+            if not (ta < temperatura < 40):
+                raise ValueError("La temperatura medida debe estar entre la ambiente y 40 °C.")
+            t = -sp.log((temperatura - ta) / (sp.Float(37) - ta)) / k
+            hora = float(hora_hallazgo - t)
+            hh = max(0, int(hora))
+            mm = round((hora - hh) * 60)
+            if mm == 60:
+                hh += 1
+                mm = 0
+            derivative = -k * (temperatura - ta)
+            return {
+                "resultado": f"{hh}:{mm:02d}",
+                "valor": float(t),
+                "pasos": [
+                    {"titulo": "Modelo de Newton", "explicacion": "Se sustituyen Ta, T(t) y k en el modelo de enfriamiento.", "latex": rf"T(t)={sp.latex(ta)}+(37-{sp.latex(ta)})e^{{-{sp.latex(k)}t}}"},
+                    {"titulo": "Despeje con logaritmo", "explicacion": "Se despeja el tiempo transcurrido desde el fallecimiento.", "latex": rf"t=-\frac{{\ln((T(t)-T_a)/(37-T_a))}}{{k}}"},
+                    {"titulo": "Tiempo calculado", "explicacion": "Se resta el tiempo transcurrido a la hora del hallazgo.", "latex": rf"t={float(t):.2f}\;\text{{h}},\quad hora={hh}:{mm:02d}"},
+                    {"titulo": "Razón de enfriamiento", "explicacion": "La derivada indica cuántos grados cambia el cuerpo por hora en ese instante.", "latex": rf"dT/dt={float(derivative):.3f}\;^\circ C/h"},
+                ],
+                "grafica": {"tipo": "derivada", "Ta": float(ta), "temperatura": float(temperatura), "k": float(k)},
+            }
+        if peticion.prueba_id == "sangre":
+            a = sp.Float(str(datos["A"]), 6)
+            k = sp.Float(str(datos["k"]), 6)
+            t1 = sp.Float(str(datos["t1"]), 6)
+            t2 = sp.Float(str(datos["t2"]), 6)
+            umbral = sp.Float(str(datos.get("umbral", 25)), 6)
+            if a <= 0 or k <= 0 or t1 < 0 or t2 <= t1:
+                raise ValueError("A y k deben ser positivos y t2 debe ser mayor que t1.")
+            t = sp.Symbol("t", positive=True)
+            antiderivada = a * sp.exp(-k * t) / (-k)
+            dosis = sp.integrate(a * sp.exp(-k * t), (t, t1, t2))
+            letal = float(dosis) >= float(umbral)
+            return {
+                "resultado": f"{float(dosis):.4f}",
+                "valor": float(dosis),
+                "letal": letal,
+                "pasos": [
+                    {"titulo": "Modelo de concentración", "explicacion": "Se integra la concentración durante la ventana de exposición.", "latex": rf"C(t)={sp.latex(a)}e^{{-{sp.latex(k)}t}}"},
+                    {"titulo": "Antiderivada", "explicacion": "Se obtiene la integral indefinida de la concentración.", "latex": rf"{sp.latex(antiderivada)}"},
+                    {"titulo": "Integral definida", "explicacion": "Se evalúa la dosis acumulada entre t1 y t2.", "latex": rf"\int_{{{sp.latex(t1)}}}^{{{sp.latex(t2)}}}{sp.latex(a)}e^{{-{sp.latex(k)}t}}dt={float(dosis):.4f}"},
+                ],
+                "grafica": {"tipo": "integral", "datos": {"A": float(a), "k": float(k), "t1": float(t1), "t2": float(t2)}},
+            }
+        if peticion.prueba_id == "vector":
+            a = [sp.Float(str(value), 6) for value in datos["A"]]
+            b = [sp.Float(str(value), 6) for value in datos["B"]]
+            if len(a) not in (2, 3) or len(a) != len(b):
+                raise ValueError("Los puntos A y B deben tener la misma dimensión: 2D o 3D.")
+            posiciones = datos["posiciones"]
+            am, bm = sp.Matrix(a), sp.Matrix(b)
+            d = bm - am
+            rows = []
+            for i, position in enumerate(posiciones, start=1):
+                pm = sp.Matrix([sp.Float(str(value), 6) for value in position])
+                if len(position) != len(a):
+                    raise ValueError("Todas las posiciones deben tener la misma dimensión.")
+                if len(a) == 2:
+                    ap = pm - am
+                    distance = abs(ap[0] * d[1] - ap[1] * d[0]) / d.norm()
+                else:
+                    distance = ((pm - am).cross(d).norm()) / d.norm()
+                rows.append({"position": i, "distancia": float(distance)})
+            compatible = min(rows, key=lambda row: row["distancia"])
+            return {
+                "resultado": compatible["position"],
+                "distancias": rows,
+                "pasos": [
+                    {"titulo": "Dirección", "explicacion": "Se calcula el vector que une los dos impactos.", "latex": rf"d=B-A={sp.latex(d)}"},
+                    {"titulo": "Distancia punto-recta", "explicacion": "Se usa el producto cruz y la norma del vector dirección.", "latex": r"d(P,r)=\frac{|(P-A)\times d|}{|d|}"},
+                    {"titulo": "Posición compatible", "explicacion": "La posición con menor distancia se aproxima a la trayectoria.", "latex": f"P_{compatible['position']}"},
+                ],
+                "grafica": {"tipo": "vector", "datos": {"A": [float(x) for x in a], "B": [float(x) for x in b], "posiciones": posiciones}, "distancias": [row["distancia"] for row in rows]},
+            }
+        if peticion.prueba_id == "hill":
+            matrix = sp.Matrix(datos["matriz"])
+            if matrix.rows not in (2, 3) or matrix.rows != matrix.cols:
+                raise ValueError("La matriz debe ser cuadrada de 2x2 o 3x3.")
+            if sp.gcd(abs(int(matrix.det())), 26) != 1:
+                raise ValueError("El determinante debe ser coprimo con 26.")
+            cipher = re.sub(r"[^A-Z]", "", str(datos["cifrado"]).upper())
+            if len(cipher) % matrix.rows:
+                raise ValueError("La longitud del texto cifrado no corresponde con el tamaño de la matriz.")
+            inverse = matrix.inv_mod(26)
+            decrypted = []
+            numbers = [ord(ch) - 65 for ch in cipher]
+            for i in range(0, len(numbers), matrix.rows):
+                block = sp.Matrix(numbers[i:i + matrix.rows])
+                decrypted.extend((inverse * block).applyfunc(lambda value: int(value) % 26))
+            text = "".join(chr(int(value) + 65) for value in decrypted).rstrip("X")
+            return {
+                "resultado": text,
+                "pasos": [
+                    {"titulo": "Determinante", "explicacion": "El determinante debe tener inverso módulo 26.", "latex": rf"\det(K)={matrix.det()}"},
+                    {"titulo": "Matriz inversa modular", "explicacion": "Se calcula K^-1 módulo 26.", "latex": sp.latex(inverse)},
+                    {"titulo": "Descifrado", "explicacion": "Cada bloque cifrado se multiplica por la inversa modular.", "latex": rf"\text{{Resultado: }}{text}"},
+                ],
+                "grafica": {"tipo": "matriz", "matriz": datos["matriz"]},
+            }
+        if peticion.prueba_id == "lagrange":
+            a, b = float(datos["a"]), float(datos["b"])
+            p, q, c = float(datos["p"]), float(datos["q"]), float(datos["c"])
+            if p == 0 and q == 0:
+                raise ValueError("La restricción no puede tener p y q iguales a cero.")
+            x, y, lam = sp.symbols("x y lambda")
+            objective = (x - a) ** 2 + (y - b) ** 2
+            restriction = p * x + q * y - c
+            equations = [sp.diff(objective, x) - lam * p, sp.diff(objective, y) - lam * q, restriction]
+            solution = sp.solve(equations, (x, y, lam), dict=True)
+            if not solution:
+                raise ValueError("El sistema no tiene una solución única.")
+            point = solution[0]
+            px, py = float(point[x]), float(point[y])
+            value = float(objective.subs({x: point[x], y: point[y]}))
+            return {
+                "resultado": f"({px:.2f}, {py:.2f})",
+                "punto": [px, py],
+                "valor": value,
+                "pasos": [
+                    {"titulo": "Función objetivo", "explicacion": "Se minimiza la distancia al cuadrado a la escena.", "latex": rf"(x-{a:g})^2+(y-{b:g})^2"},
+                    {"titulo": "Restricción", "explicacion": "El punto debe permanecer sobre la ruta.", "latex": rf"{p:g}x+{q:g}y={c:g}"},
+                    {"titulo": "Condición de Lagrange", "explicacion": "Se igualan los gradientes.", "latex": r"\nabla f=\lambda\nabla g"},
+                    {"titulo": "Punto óptimo", "explicacion": "SymPy resuelve el sistema y obtiene el punto más cercano.", "latex": rf"\left({px:.2f},{py:.2f}\right)"},
+                ],
+                "grafica": {"tipo": "lagrange", "datos": {"a": a, "b": b, "p": p, "q": q, "c": c}, "punto": [px, py]},
+            }
+        raise HTTPException(status_code=400, detail="Tipo de prueba no válido.")
+    except (KeyError, TypeError, ValueError, sp.SympifyError) as error:
+        raise HTTPException(status_code=422, detail=str(error) or "Los datos no son válidos.")
 
 
 @router.get("/generar")

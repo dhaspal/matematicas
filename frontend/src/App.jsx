@@ -21,7 +21,7 @@ export default function App() {
         <Route path="/paso" element={<PasoAPaso sumarAcierto={sumarAcierto} sumarError={sumarError} />} />
         <Route path="/laboratorio" element={<Laboratorio />} />
         <Route path="/jefe" element={<JefeFinal sumarAcierto={sumarAcierto} sumarError={sumarError} />} />
-        <Route path="/casos" element={<CasosForenses {...progresoState} />} />
+        <Route path="/casos" element={<CasosForenses />} />
       </Routes>
     </>
   );

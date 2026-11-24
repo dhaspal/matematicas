@@ -1,158 +1,158 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Libreta from "../components/Libreta";
-import PruebaCard from "../components/PruebaCard";
-import Sospechoso from "../components/Sospechoso";
+import Ecuacion from "../components/Ecuacion";
+import Grafica from "../components/Grafica";
+import PasoCard from "../components/PasoCard";
 import { casosApi } from "../api/casos";
 
-export default function CasosForenses({ progreso, gastarXP, cerrarCaso, sumarAcierto, sumarError }) {
-  const [dificultad, setDificultad] = useState("facil");
-  const [seed, setSeed] = useState("");
-  const [caso, setCaso] = useState(null);
-  const [indice, setIndice] = useState(0);
-  const [descartados, setDescartados] = useState([]);
+const aplicaciones = [
+  { id: "hora", nombre: "Hora de la muerte", subtitulo: "Ley de enfriamiento de Newton", formulas: "T(t)=T_a+(37-T_a)e^{-kt}" },
+  { id: "sangre", nombre: "Sustancia en sangre", subtitulo: "Farmacocinética", formulas: "\\int C(t)dt" },
+  { id: "vector", nombre: "Origen del disparo", subtitulo: "Reconstrucción balística", formulas: "d(P,r)=|(P-A)\\times d|/|d|" },
+  { id: "hill", nombre: "Mensaje cifrado", subtitulo: "Criptografía de Hill", formulas: "P=K^{-1}C\\pmod{26}" },
+  { id: "lagrange", nombre: "Ruta de escape", subtitulo: "Optimización con restricciones", formulas: "\\nabla f=\\lambda\\nabla g" },
+];
+
+const iniciales = {
+  hora: { Ta: 20, temperatura: 34.61, k: 0.055, hora_hallazgo: 20 },
+  sangre: { A: 8, k: 0.28, t1: 2, t2: 4, umbral: 25 },
+  vector: { A: [4, 3], B: [9, 8], posiciones: [[7, 7], [4, 3], [9, 8]] },
+  hill: { matriz: [[3, 3], [2, 5]], cifrado: "XDKALDLH" },
+  lagrange: { a: 3, b: 3, p: 3, q: 2, c: 18 },
+};
+
+function listaATexto(valor) {
+  return JSON.stringify(valor);
+}
+
+export default function CasosForenses() {
+  const [activa, setActiva] = useState("hora");
+  const [datos, setDatos] = useState(iniciales);
   const [resultado, setResultado] = useState(null);
-  const [feedback, setFeedback] = useState("");
-  const [pistaTexto, setPistaTexto] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [acusacion, setAcusacion] = useState(false);
-  const [seleccion, setSeleccion] = useState("");
-  const [intentos, setIntentos] = useState(3);
-  const [informe, setInforme] = useState(null);
-  const [errores, setErrores] = useState(0);
-  const [sinPistas, setSinPistas] = useState(true);
+  const [error, setError] = useState("");
 
-  const nuevoCaso = async () => {
-    setCargando(true); setFeedback(""); setResultado(null); setPistaTexto("");
-    try {
-      const data = await casosApi.generar(dificultad, seed);
-      setCaso(data); setSeed(data.seed); setIndice(0); setDescartados([]);
-      setAcusacion(false); setSeleccion(""); setIntentos(3); setInforme(null); setErrores(0); setSinPistas(true);
-    } catch (error) { setFeedback(error.message); }
-    finally { setCargando(false); }
+  const cambiarDato = (clave, valor) => {
+    setDatos((actual) => ({ ...actual, [activa]: { ...actual[activa], [clave]: valor } }));
   };
 
-  const verificar = async (respuesta) => {
-    if (!caso) return;
-    setCargando(true); setFeedback("");
+  const calcular = async () => {
+    setCargando(true); setError(""); setResultado(null);
     try {
-      const data = await casosApi.verificar({ seed: caso.seed, dificultad, prueba_id: caso.pruebas[indice].id, respuesta });
-      setResultado(data); setFeedback(data.retroalimentacion);
-      if (data.correcta) {
-        setDescartados((actual) => [...new Set([...actual, ...data.sospechosos_descartados])]);
-        sumarAcierto?.("casos", 30);
-      } else {
-        setErrores((actual) => actual + 1);
-        sumarError?.();
+      let entrada = datos[activa];
+      if (activa === "vector" && typeof entrada.A === "string") {
+        entrada = { ...entrada, A: JSON.parse(entrada.A), B: JSON.parse(entrada.B), posiciones: JSON.parse(entrada.posiciones) };
       }
-    } catch (error) { setFeedback(error.message); }
-    finally { setCargando(false); }
+      if (activa === "hill" && typeof entrada.matriz === "string") {
+        entrada = { ...entrada, matriz: JSON.parse(entrada.matriz) };
+      }
+      const data = await casosApi.calcular(activa, entrada);
+      setResultado(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCargando(false);
+    }
   };
 
-  const pedirPista = async () => {
-    if (!caso || progreso.xp < 10) return;
-    try {
-      const nivel = pistaTexto ? 2 : 1;
-      const data = await casosApi.pista({ seed: caso.seed, dificultad, prueba_id: caso.pruebas[indice].id, nivel });
-      setPistaTexto(data.pista); setSinPistas(false); gastarXP(10);
-    } catch (error) { setFeedback(error.message); }
+  const cambiarAplicacion = (id) => {
+    setActiva(id); setResultado(null); setError("");
   };
 
-  const siguiente = () => {
-    setResultado(null); setFeedback(""); setPistaTexto("");
-    if (indice + 1 < caso.pruebas.length) setIndice(indice + 1);
-    else setAcusacion(true);
+  const campos = (prueba) => {
+    const actual = datos[prueba];
+    if (prueba === "hora") return [
+      ["Ta", "Temperatura ambiente (°C)", actual.Ta],
+      ["temperatura", "Temperatura medida (°C)", actual.temperatura],
+      ["k", "Constante k", actual.k],
+      ["hora_hallazgo", "Hora del hallazgo", actual.hora_hallazgo],
+    ];
+    if (prueba === "sangre") return [
+      ["A", "Concentración inicial A", actual.A],
+      ["k", "Constante k", actual.k],
+      ["t1", "Tiempo inicial t1", actual.t1],
+      ["t2", "Tiempo final t2", actual.t2],
+      ["umbral", "Umbral de referencia", actual.umbral],
+    ];
+    if (prueba === "vector") return [
+      ["A", "Punto A [x,y]", typeof actual.A === "string" ? actual.A : listaATexto(actual.A)],
+      ["B", "Punto B [x,y]", typeof actual.B === "string" ? actual.B : listaATexto(actual.B)],
+      ["posiciones", "Posiciones [[x,y],...]", typeof actual.posiciones === "string" ? actual.posiciones : listaATexto(actual.posiciones)],
+    ];
+    if (prueba === "hill") return [
+      ["matriz", "Matriz clave", typeof actual.matriz === "string" ? actual.matriz : listaATexto(actual.matriz)],
+      ["cifrado", "Texto cifrado", actual.cifrado],
+    ];
+    return [
+      ["a", "Centro x (a)", actual.a],
+      ["b", "Centro y (b)", actual.b],
+      ["p", "Coeficiente p", actual.p],
+      ["q", "Coeficiente q", actual.q],
+      ["c", "Constante c", actual.c],
+    ];
   };
 
-  const acusar = async () => {
-    if (!seleccion) return;
-    setCargando(true);
-    try {
-      const data = await casosApi.acusar({ seed: caso.seed, dificultad, sospechoso_id: seleccion });
-      setInforme(data);
-      if (data.correcto) cerrarCaso(dificultad, errores === 0, sinPistas);
-      else setIntentos((actual) => actual - 1);
-    } catch (error) { setFeedback(error.message); }
-    finally { setCargando(false); }
-  };
-
+  const actualAplicacion = aplicaciones.find((item) => item.id === activa);
   return (
     <main className="pagina casos-forenses">
-      <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="casos-cabecera">
-        <span className="casos-kicker">DIVISIÓN DE ANÁLISIS FORENSE</span>
+      <header className="casos-cabecera">
+        <span className="casos-kicker">MATEMÁTICA APLICADA</span>
         <h1>Casos Forenses</h1>
-      </motion.header>
-      {!caso && (
-        <section className="tarjeta-grande configuracion-caso">
-          <h2>Selecciona el expediente</h2>
-          <div className="panel-controles">
-            <label>Dificultad
-              <select value={dificultad} onChange={(event) => setDificultad(event.target.value)}>
-                <option value="facil">Fácil · 3 pruebas</option>
-                <option value="medio">Medio · 4 pruebas</option>
-                <option value="dificil">Difícil · 5 pruebas</option>
-              </select>
+        <p>Introduce datos reales y observa cómo las matemáticas ayudan a resolver situaciones prácticas.</p>
+      </header>
+
+      <nav className="casos-aplicaciones" aria-label="Aplicaciones matemáticas">
+        {aplicaciones.map((item) => (
+          <button key={item.id} className={activa === item.id ? "activa" : ""} onClick={() => cambiarAplicacion(item.id)}>
+            <strong>{item.nombre}</strong><span>{item.subtitulo}</span>
+          </button>
+        ))}
+      </nav>
+
+      <section className="casos-calculadora">
+        <div className="casos-formulario">
+          <span className="casos-kicker">DATOS DE ENTRADA</span>
+          <h2>{actualAplicacion.nombre}</h2>
+          <Ecuacion latex={actualAplicacion.formulas} />
+          {campos(activa).map(([clave, etiqueta, valor]) => (
+            <label key={clave}>
+              {etiqueta}
+              <input
+                value={valor}
+                onChange={(event) => {
+                  const lista = activa === "vector" || activa === "hill";
+                  if (lista) cambiarDato(clave, event.target.value);
+                  else cambiarDato(clave, event.target.value === "" ? "" : Number(event.target.value));
+                }}
+              />
             </label>
-            <label>Seed opcional
-              <input value={seed} onChange={(event) => setSeed(event.target.value)} placeholder="Ejemplo: 4512" />
-            </label>
-          </div>
-          <button className="principal" disabled={cargando} onClick={nuevoCaso}>{cargando ? "Abriendo expediente..." : "Nuevo caso"}</button>
-        </section>
-      )}
-      {caso && (
-        <>
-          <section className="historia-caso">
-            <span>Expediente · {seed}</span>
-            <h2>{caso.titulo}</h2>
-            <p>{caso.historia}</p>
-          </section>
-          <div className="casos-layout">
-            <Libreta sospechosos={caso.sospechosos} descartados={descartados} />
-            <section className="casos-contenido">
-              {!acusacion ? (
-                <>
-                  <div className="linea-pruebas">
-                    {caso.pruebas.map((prueba, pruebaIndice) => (
-                      <button key={prueba.id} className={pruebaIndice === indice ? "activa" : pruebaIndice < indice ? "resuelta" : ""}>
-                        {pruebaIndice + 1}
-                      </button>
-                    ))}
-                  </div>
-                  <PruebaCard
-                    prueba={caso.pruebas[indice]}
-                    onVerificar={verificar}
-                    cargando={cargando}
-                    feedback={pistaTexto || feedback}
-                    resultado={resultado}
-                    onPista={pedirPista}
-                  />
-                  {resultado?.correcta && <button className="principal" onClick={siguiente}>{indice + 1 === caso.pruebas.length ? "Ir a la acusación" : "Siguiente prueba"}</button>}
-                </>
-              ) : (
-                <section className="tarjeta-grande acusacion">
-                  <h2>Acusación final</h2>
-                  <p>Elige al único sospechoso compatible con todas las evidencias. Te quedan {intentos} oportunidades.</p>
-                  <div className="acusacion-sospechosos">
-                    {caso.sospechosos.map((sospechoso) => (
-                      <button key={sospechoso.id} className={seleccion === sospechoso.id ? "seleccionado" : ""} onClick={() => setSeleccion(sospechoso.id)}>
-                        {sospechoso.nombre}
-                      </button>
-                    ))}
-                  </div>
-                  <button className="principal" disabled={!seleccion || cargando || intentos === 0} onClick={acusar}>Presentar acusación</button>
-                  {informe && <div className={`feedback ${informe.correcto ? "ok" : "error"}`}>
-                    {informe.correcto ? informe.resumen_final : `${informe.resumen_final} Intentos restantes: ${intentos - (intentos > 0 ? 1 : 0)}.`}
-                  </div>}
-                  {informe?.correcto && <button className="secundario" onClick={() => setCaso(null)}>Abrir otro expediente</button>}
-                  {intentos === 0 && <button className="secundario" onClick={() => setCaso(null)}>Reintentar con otro caso</button>}
-                </section>
-              )}
-            </section>
-          </div>
-        </>
-      )}
-      {feedback && !caso && <div className="feedback error">{feedback}</div>}
+          ))}
+          <button className="principal" disabled={cargando} onClick={calcular}>{cargando ? "Calculando..." : "Calcular y explicar"}</button>
+          {error && <div className="feedback error">{error}</div>}
+        </div>
+
+        <div className="casos-resultado">
+          {!resultado ? (
+            <div className="resultado-vacio">
+              <strong>Resultado</strong>
+              <p>Completa los datos y calcula para ver la utilidad práctica y los pasos.</p>
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="resultado-final forense">
+                <h2>Resultado</h2>
+                <strong>{resultado.resultado}</strong>
+                {resultado.letal !== undefined && <p>{resultado.letal ? "Supera el umbral de referencia." : "Está por debajo del umbral de referencia."}</p>}
+              </div>
+              {resultado.grafica && <Grafica datos={resultado.grafica} />}
+              <h2>Cómo se calcula</h2>
+              <div className="pasos-lista">
+                {resultado.pasos.map((paso, indice) => <PasoCard key={indice} paso={paso} numero={indice + 1} />)}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

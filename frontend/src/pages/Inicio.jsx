@@ -7,7 +7,7 @@ const modos = [
   { to: "/paso", titulo: "Paso a Paso", texto: "Aprende derivadas e integrales con opciones guiadas.", icono: GraduationCap, color: "cian" },
   { to: "/laboratorio", titulo: "Laboratorio", texto: "Calculadora simbólica con pasos y gráficas.", icono: FlaskConical, color: "verde" },
   { to: "/jefe", titulo: "Jefe Final", texto: "Supera etapas combinadas de optimización.", icono: Crown, color: "dorado" },
-  { to: "/casos", titulo: "Casos Forenses", texto: "Resuelve un crimen usando matemáticas reales.", icono: Search, color: "dorado" },
+  { to: "/casos", titulo: "Casos Forenses", texto: "Usa matemáticas reales para analizar datos de situaciones forenses.", icono: Search, color: "dorado" },
 ];
 
 export default function Inicio() {

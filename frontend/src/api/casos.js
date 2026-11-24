@@ -11,6 +11,10 @@ async function request(path, options = {}) {
 }
 
 export const casosApi = {
+  calcular: (prueba_id, datos) => request("/api/casos/calcular-prueba", {
+    method: "POST",
+    body: JSON.stringify({ prueba_id, datos }),
+  }),
   generar: (dificultad, seed) => {
     const params = new URLSearchParams({ dificultad });
     if (seed) params.set("seed", seed);

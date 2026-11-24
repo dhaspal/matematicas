@@ -65,9 +65,9 @@ Demostración sugerida de 3 minutos:
 - **Cifrado de Hill:** usa matrices, determinantes e inversos modulares para descifrar mensajes.
 - **Lagrange:** optimiza rutas o puntos con restricciones lineales.
 
-Demo sugerida con seed fija `4512`:
+Casos Forenses funciona como una calculadora matemática aplicada:
 
-1. Selecciona dificultad **Difícil**.
-2. Introduce la seed `4512` y abre el caso.
-3. Resuelve las cinco pruebas y observa cómo se descartan los sospechosos.
-4. Presenta la acusación final.
+1. Selecciona una aplicación: enfriamiento, concentración, vectores, Hill o Lagrange.
+2. Modifica los datos de entrada.
+3. Pulsa **Calcular y explicar**.
+4. Consulta el resultado, la gráfica y los pasos obtenidos con SymPy.
