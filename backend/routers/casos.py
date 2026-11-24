@@ -84,29 +84,6 @@ def calcular_prueba(peticion: CalcularPruebaRequest):
                 ],
                 "grafica": {"tipo": "derivada", "Ta": float(ta), "temperatura": float(temperatura), "k": float(k), "t": horas_transcurridas},
             }
-        if peticion.prueba_id == "sangre":
-            a = sp.Float(str(datos["A"]), 6)
-            k = sp.Float(str(datos["k"]), 6)
-            t1 = sp.Float(str(datos["t1"]), 6)
-            t2 = sp.Float(str(datos["t2"]), 6)
-            umbral = sp.Float(str(datos.get("umbral", 25)), 6)
-            if a <= 0 or k <= 0 or t1 < 0 or t2 <= t1:
-                raise ValueError("A y k deben ser positivos y t2 debe ser mayor que t1.")
-            t = sp.Symbol("t", positive=True)
-            antiderivada = a * sp.exp(-k * t) / (-k)
-            dosis = sp.integrate(a * sp.exp(-k * t), (t, t1, t2))
-            letal = float(dosis) >= float(umbral)
-            return {
-                "resultado": f"{float(dosis):.4f}",
-                "valor": float(dosis),
-                "letal": letal,
-                "pasos": [
-                    {"titulo": "Modelo de concentración", "explicacion": "Se integra la concentración durante la ventana de exposición.", "latex": rf"C(t)={sp.latex(a)}e^{{-{sp.latex(k)}t}}"},
-                    {"titulo": "Antiderivada", "explicacion": "Se obtiene la integral indefinida de la concentración.", "latex": rf"{sp.latex(antiderivada)}"},
-                    {"titulo": "Integral definida", "explicacion": "Se evalúa la dosis acumulada entre t1 y t2.", "latex": rf"\int_{{{sp.latex(t1)}}}^{{{sp.latex(t2)}}}{sp.latex(a)}e^{{-{sp.latex(k)}t}}dt={float(dosis):.4f}"},
-                ],
-                "grafica": {"tipo": "integral", "datos": {"A": float(a), "k": float(k), "t1": float(t1), "t2": float(t2)}},
-            }
         if peticion.prueba_id == "vector":
             a = [sp.Float(str(value), 6) for value in datos["A"]]
             b = [sp.Float(str(value), 6) for value in datos["B"]]
@@ -147,31 +124,6 @@ def calcular_prueba(peticion: CalcularPruebaRequest):
                     {"titulo": "Posición compatible", "explicacion": "La posición con menor distancia se aproxima a la trayectoria.", "latex": f"P_{compatible['position']}"},
                 ],
                 "grafica": {"tipo": "vector", "datos": {"A": [float(x) for x in a], "B": [float(x) for x in b], "posiciones": posiciones}, "distancias": [row["distancia"] for row in rows]},
-            }
-        if peticion.prueba_id == "hill":
-            matrix = sp.Matrix(datos["matriz"])
-            if matrix.rows not in (2, 3) or matrix.rows != matrix.cols:
-                raise ValueError("La matriz debe ser cuadrada de 2x2 o 3x3.")
-            if sp.gcd(abs(int(matrix.det())), 26) != 1:
-                raise ValueError("El determinante debe ser coprimo con 26.")
-            cipher = re.sub(r"[^A-Z]", "", str(datos["cifrado"]).upper())
-            if len(cipher) % matrix.rows:
-                raise ValueError("La longitud del texto cifrado no corresponde con el tamaño de la matriz.")
-            inverse = matrix.inv_mod(26)
-            decrypted = []
-            numbers = [ord(ch) - 65 for ch in cipher]
-            for i in range(0, len(numbers), matrix.rows):
-                block = sp.Matrix(numbers[i:i + matrix.rows])
-                decrypted.extend((inverse * block).applyfunc(lambda value: int(value) % 26))
-            text = "".join(chr(int(value) + 65) for value in decrypted).rstrip("X")
-            return {
-                "resultado": text,
-                "pasos": [
-                    {"titulo": "Determinante", "explicacion": "El determinante debe tener inverso módulo 26.", "latex": rf"\det(K)={matrix.det()}"},
-                    {"titulo": "Matriz inversa modular", "explicacion": "Se calcula K^-1 módulo 26.", "latex": sp.latex(inverse)},
-                    {"titulo": "Descifrado", "explicacion": "Cada bloque cifrado se multiplica por la inversa modular.", "latex": rf"\text{{Resultado: }}{text}"},
-                ],
-                "grafica": {"tipo": "matriz", "matriz": datos["matriz"]},
             }
         if peticion.prueba_id == "lagrange":
             a, b = float(datos["a"]), float(datos["b"])

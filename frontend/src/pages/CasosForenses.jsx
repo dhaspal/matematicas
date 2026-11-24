@@ -7,17 +7,13 @@ import { casosApi } from "../api/casos";
 
 const aplicaciones = [
   { id: "hora", nombre: "Hora de la muerte", subtitulo: "Ley de enfriamiento de Newton", formulas: "T(t)=T_a+(37-T_a)e^{-kt}" },
-  { id: "sangre", nombre: "Sustancia en sangre", subtitulo: "Farmacocinética", formulas: "\\int C(t)dt" },
   { id: "vector", nombre: "Origen del disparo", subtitulo: "Reconstrucción balística", formulas: "d(P,r)=|(P-A)\\times d|/|d|" },
-  { id: "hill", nombre: "Mensaje cifrado", subtitulo: "Criptografía de Hill", formulas: "P=K^{-1}C\\pmod{26}" },
   { id: "lagrange", nombre: "Ruta de escape", subtitulo: "Optimización con restricciones", formulas: "\\nabla f=\\lambda\\nabla g" },
 ];
 
 const iniciales = {
   hora: { Ta: 20, temperatura: 34.61, k: 0.055, hora_hallazgo: "20:00" },
-  sangre: { A: 8, k: 0.28, t1: 2, t2: 4, umbral: 25 },
   vector: { A: [4, 3], B: [9, 8], posiciones: [[7, 7], [4, 3], [9, 8]] },
-  hill: { matriz: [[3, 3], [2, 5]], cifrado: "XDKALDLH" },
   lagrange: { a: 3, b: 3, p: 3, q: 2, c: 18 },
 };
 
@@ -43,9 +39,6 @@ export default function CasosForenses() {
       if (activa === "vector" && typeof entrada.A === "string") {
         entrada = { ...entrada, A: JSON.parse(entrada.A), B: JSON.parse(entrada.B), posiciones: JSON.parse(entrada.posiciones) };
       }
-      if (activa === "hill" && typeof entrada.matriz === "string") {
-        entrada = { ...entrada, matriz: JSON.parse(entrada.matriz) };
-      }
       const data = await casosApi.calcular(activa, entrada);
       setResultado(data);
     } catch (e) {
@@ -67,21 +60,10 @@ export default function CasosForenses() {
       ["k", "Constante de enfriamiento", "k", actual.k],
       ["hora_hallazgo", "Hora del hallazgo", "t_h", actual.hora_hallazgo],
     ];
-    if (prueba === "sangre") return [
-      ["A", "Concentración inicial", "A", actual.A],
-      ["k", "Constante de eliminación", "k", actual.k],
-      ["t1", "Tiempo inicial", "t_1", actual.t1],
-      ["t2", "Tiempo final", "t_2", actual.t2],
-      ["umbral", "Umbral de referencia", "U", actual.umbral],
-    ];
     if (prueba === "vector") return [
       ["A", "Primer punto de impacto", "A=(x_A,y_A)", typeof actual.A === "string" ? actual.A : listaATexto(actual.A)],
       ["B", "Segundo punto de impacto", "B=(x_B,y_B)", typeof actual.B === "string" ? actual.B : listaATexto(actual.B)],
       ["posiciones", "Posibles posiciones del tirador", "P_i", typeof actual.posiciones === "string" ? actual.posiciones : listaATexto(actual.posiciones)],
-    ];
-    if (prueba === "hill") return [
-      ["matriz", "Matriz clave", "K", typeof actual.matriz === "string" ? actual.matriz : listaATexto(actual.matriz)],
-      ["cifrado", "Texto cifrado", "C", actual.cifrado],
     ];
     return [
       ["a", "Centro de la distancia en X", "a", actual.a],
@@ -95,9 +77,7 @@ export default function CasosForenses() {
   const actualAplicacion = aplicaciones.find((item) => item.id === activa);
   const utilidad = {
     hora: "Estima desde cuándo llevaba enfriándose el cuerpo. El resultado sirve como intervalo aproximado de fallecimiento.",
-    sangre: "Calcula la exposición acumulada durante una ventana de tiempo y la compara con un umbral de referencia.",
     vector: "Indica cuál de las posiciones candidatas está sobre la trayectoria y aproxima su ubicación como norte, sur, noreste, suroeste, etc.",
-    hill: "Descifra el mensaje mediante el inverso modular de la matriz, útil para estudiar criptografía.",
     lagrange: "Encuentra el punto óptimo sobre una ruta o restricción lineal y aproxima hacia qué cuadrante queda.",
   }[activa];
   return (
@@ -128,7 +108,7 @@ export default function CasosForenses() {
               <input
                 value={valor}
                 onChange={(event) => {
-                  const lista = activa === "vector" || activa === "hill";
+                  const lista = activa === "vector";
                   if (lista || (activa === "hora" && clave === "hora_hallazgo")) cambiarDato(clave, event.target.value);
                   else cambiarDato(clave, event.target.value === "" ? "" : Number(event.target.value));
                 }}

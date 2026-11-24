@@ -16,5 +16,5 @@ class AcusarRequest(BaseModel):
 
 
 class CalcularPruebaRequest(BaseModel):
-    prueba_id: str = Field(pattern="^(hora|sangre|vector|hill|lagrange)$")
+    prueba_id: str = Field(pattern="^(hora|vector|lagrange)$")
     datos: dict

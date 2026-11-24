@@ -60,9 +60,7 @@ Demostración sugerida de 3 minutos:
 **Casos Forenses** convierte derivadas, integrales, vectores, matrices y optimización en evidencia investigativa:
 
 - **Ley de enfriamiento:** estima la hora de fallecimiento en medicina forense.
-- **Farmacocinética:** integra una concentración exponencial para medir una dosis acumulada.
 - **Balística:** calcula la distancia de posiciones a una trayectoria y reconstruye el origen del disparo.
-- **Cifrado de Hill:** usa matrices, determinantes e inversos modulares para descifrar mensajes.
 - **Lagrange:** optimiza rutas o puntos con restricciones lineales.
 
 Casos Forenses funciona como una calculadora matemática aplicada:

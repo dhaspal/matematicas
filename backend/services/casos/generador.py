@@ -28,11 +28,7 @@ def crear_caso(seed, dificultad="facil"):
             "descartado": False,
         })
 
-    proof_types = ["hora", "vector", "hill"]
-    if difficulty != "facil":
-        proof_types.insert(1, "sangre")
-    if difficulty == "dificil":
-        proof_types.append("lagrange")
+    proof_types = ["hora", "vector", "lagrange"]
 
     proof_data = []
     private_solutions = {}
@@ -41,16 +37,12 @@ def crear_caso(seed, dificultad="facil"):
         proof_id = proof_type
         title = {
             "hora": "Hora de la muerte",
-            "sangre": "Sustancia en la sangre",
             "vector": "Origen del disparo",
-            "hill": "Mensaje cifrado",
             "lagrange": "Ruta de escape",
         }[proof_type]
         question = {
             "hora": "¿A qué hora murió la víctima? Responde HH:MM.",
-            "sangre": "Calcula la dosis acumulada y responde si fue letal (sí/no).",
             "vector": "¿Qué posición está sobre la trayectoria? Responde un número del 1 al 4.",
-            "hill": "Descifra el bloque de matriz y escribe el texto.",
             "lagrange": "Escribe el punto óptimo como (x,y).",
         }[proof_type]
         proof_data.append({
