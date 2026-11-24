@@ -32,6 +32,42 @@ export default function CasosForenses() {
     setDatos((actual) => ({ ...actual, [activa]: { ...actual[activa], [clave]: valor } }));
   };
 
+  const cambiarCoordenada = (grupo, indice, eje, valor) => {
+    setDatos((actual) => {
+      const actualVector = { ...actual.vector };
+      if (grupo === "A" || grupo === "B") {
+        const punto = [...actualVector[grupo]];
+        punto[eje] = valor === "" ? "" : Number(valor);
+        actualVector[grupo] = punto;
+      } else {
+        const posiciones = actualVector.posiciones.map((punto) => [...punto]);
+        posiciones[indice][eje] = valor === "" ? "" : Number(valor);
+        actualVector.posiciones = posiciones;
+      }
+      return { ...actual, vector: actualVector };
+    });
+  };
+
+  const agregarPosicion = () => {
+    setDatos((actual) => ({
+      ...actual,
+      vector: {
+        ...actual.vector,
+        posiciones: [...actual.vector.posiciones, [0, 0]],
+      },
+    }));
+  };
+
+  const quitarPosicion = (indice) => {
+    setDatos((actual) => ({
+      ...actual,
+      vector: {
+        ...actual.vector,
+        posiciones: actual.vector.posiciones.filter((_, i) => i !== indice),
+      },
+    }));
+  };
+
   const calcular = async () => {
     setCargando(true); setError(""); setResultado(null);
     try {
@@ -59,11 +95,6 @@ export default function CasosForenses() {
       ["temperatura", "Temperatura medida del cuerpo", "T(t)", actual.temperatura],
       ["k", "Constante de enfriamiento", "k", actual.k],
       ["hora_hallazgo", "Hora del hallazgo", "t_h", actual.hora_hallazgo],
-    ];
-    if (prueba === "vector") return [
-      ["A", "Primer punto de impacto", "A=(x_A,y_A)", typeof actual.A === "string" ? actual.A : listaATexto(actual.A)],
-      ["B", "Segundo punto de impacto", "B=(x_B,y_B)", typeof actual.B === "string" ? actual.B : listaATexto(actual.B)],
-      ["posiciones", "Posibles posiciones del tirador", "P_i", typeof actual.posiciones === "string" ? actual.posiciones : listaATexto(actual.posiciones)],
     ];
     return [
       ["a", "Centro de la distancia en X", "a", actual.a],
@@ -101,7 +132,35 @@ export default function CasosForenses() {
           <span className="casos-kicker">DATOS DE ENTRADA</span>
           <h2>{actualAplicacion.nombre}</h2>
           <Ecuacion latex={actualAplicacion.formulas} />
-          {campos(activa).map(([clave, etiqueta, variable, valor]) => (
+          {activa === "vector" ? (
+            <div className="coordenadas-vector">
+              <section>
+                <h3>Primer punto de impacto</h3>
+                <div className="coordenadas-fila">
+                  <label>Distancia horizontal (X)<input type="number" value={datos.vector.A[0]} onChange={(e) => cambiarCoordenada("A", 0, 0, e.target.value)} /></label>
+                  <label>Distancia vertical (Y)<input type="number" value={datos.vector.A[1]} onChange={(e) => cambiarCoordenada("A", 0, 1, e.target.value)} /></label>
+                </div>
+              </section>
+              <section>
+                <h3>Segundo punto de impacto</h3>
+                <div className="coordenadas-fila">
+                  <label>Distancia horizontal (X)<input type="number" value={datos.vector.B[0]} onChange={(e) => cambiarCoordenada("B", 0, 0, e.target.value)} /></label>
+                  <label>Distancia vertical (Y)<input type="number" value={datos.vector.B[1]} onChange={(e) => cambiarCoordenada("B", 0, 1, e.target.value)} /></label>
+                </div>
+              </section>
+              <section className="posiciones-candidatas">
+                <div className="posiciones-cabecera"><h3>Posibles ubicaciones</h3><button type="button" onClick={agregarPosicion}>Agregar ubicación</button></div>
+                {datos.vector.posiciones.map((posicion, indice) => (
+                  <div className="posicion-fila" key={indice}>
+                    <span>Ubicación {indice + 1}</span>
+                    <label>Este-oeste (X)<input type="number" value={posicion[0]} onChange={(e) => cambiarCoordenada("P", indice, 0, e.target.value)} /></label>
+                    <label>Norte-sur (Y)<input type="number" value={posicion[1]} onChange={(e) => cambiarCoordenada("P", indice, 1, e.target.value)} /></label>
+                    {datos.vector.posiciones.length > 2 && <button type="button" className="quitar-posicion" onClick={() => quitarPosicion(indice)} aria-label={`Eliminar ubicación ${indice + 1}`}>Eliminar</button>}
+                  </div>
+                ))}
+              </section>
+            </div>
+          ) : campos(activa).map(([clave, etiqueta, variable, valor]) => (
             <label className="campo-forense" key={clave}>
               <strong>{etiqueta}</strong>
               <span className="variable-forense"><Ecuacion latex={variable} /></span>
